@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GeneticPredict — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        /* ── DASHBOARD-SPECIFIC ── */
+        .header-title { 
+            font: 600 14px 'Sora', sans-serif; 
+            color: rgba(255,255,255,0.55); 
+            letter-spacing: 0.3px; 
+        }
+
+        /* ── LAYOUT ── */
+        .page-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+            max-width: 1100px;
+            margin: 32px auto 60px;
+            padding: 0 24px;
+        }
+
+        /* ── PERSONAL INFO ── */
+        .info-row { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+        .info-item { 
+            display: flex; flex-direction: column; gap: 3px; 
+            padding: 12px 14px; 
+            background: var(--off-white); 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+        }
+        .info-label { 
+            font: 600 11px/1 sans-serif; 
+            text-transform: uppercase; 
+            letter-spacing: 0.6px; 
+            color: var(--teal); 
+        }
+        .info-value { font: 500 14px/1 sans-serif; color: var(--text); }
+
+        .avatar-circle {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), #06b6d4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; margin: 0 auto 18px;
+            box-shadow: 0 4px 14px rgba(15,184,201,0.35);
+        }
+
+        /* ── BUTTONS ── */
+        .btn-green, .predict-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: var(--white); border: none;
+            box-shadow: 0 4px 14px rgba(16,185,129,0.30);
+            border-radius: 10px; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-weight: 700; text-decoration: none;
+        }
+        .btn-green { width: 100%; padding: 14px 22px; font-size: 15px; }
+        .predict-btn { display: inline-flex; align-items: center; gap: 10px; padding: 13px 28px; font: 700 14px 'DM Sans', sans-serif; white-space: nowrap; flex-shrink: 0; }
+        .btn-green:hover, .predict-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.40); }
+        .predict-btn:hover { box-shadow: 0 8px 22px rgba(16,185,129,0.45); }
+
+        .delete-btn {
+            width: 100%; padding: 11px 22px; margin-top: 10px;
+            background: transparent; color: #ef4444;
+            border: 1.5px solid #ef4444; border-radius: 10px;
+            font: 600 14px 'DM Sans', sans-serif; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .delete-btn:hover { background: #fee2e2; }
+
+        /* ── RIGHT COLUMN ── */
+        .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+        /* ── META CHIPS ── */
+        .dataset-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 6px; }
+        .meta-chip { 
+            padding: 14px 16px; 
+            background: var(--off-white); border: 1px solid var(--border); border-radius: 10px;
+            display: flex; flex-direction: column; gap: 4px; 
+        }
+        .meta-chip-label { 
+            font: 600 11px/1 sans-serif; 
+            text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); 
+        }
+        .meta-chip-value { font: 700 15px 'Sora', sans-serif; color: var(--navy); }
+
+        /* ── UPLOAD ZONE ── */
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: 12px;
+            padding: 28px 20px; text-align: center; background: var(--off-white);
+            transition: border-color 0.2s, background 0.2s; cursor: pointer;
+            position: relative;
+        }
+        .upload-zone:hover { border-color: var(--teal); background: var(--teal-light); }
+        .upload-zone-icon { font-size: 32px; margin-bottom: 10px; }
+        .upload-zone p { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
+        .upload-zone strong { color: var(--text); }
+
+        .file-input-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; background: var(--navy); color: var(--white);
+            border-radius: 8px; font: 600 13px sans-serif; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .file-input-label:hover { background: var(--navy-light); }
+        #myfile { display: none; }
+        #fileName { display: block; margin-top: 10px; font: 600 13px sans-serif; color: var(--teal); }
+
+        .sample-link { font-size: 13px; color: var(--text-muted); margin-top: 10px; display: block; }
+        .sample-link a { color: var(--teal); font-weight: 600; text-decoration: none; }
+        .sample-link a:hover { text-decoration: underline; }
+
+        /* ── PROGRESS ── */
+        #uploadProgress { display: none; margin:16px 0 24px 0; }
+        .progress-label { 
+            font: 600 13px sans-serif; color: var(--text-muted); 
+            margin-bottom: 8px; display: flex; justify-content: space-between; 
+        }
+        .progress-track { 
+            width: 100%; height: 10px; 
+            background: var(--border); border-radius: 10px; overflow: hidden; 
+        }
+        #progressBar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--teal), #06b6d4);
+            border-radius: 10px; transition: width 0.3s ease;
+        }
+
+        /* ── STATS ── */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-box { padding: 14px 16px; background: var(--off-white); border: 1px solid var(--border); border-radius: 10px; }
+        .stat-value { font: 700 22px 'Sora', sans-serif; color: var(--navy); }
+
+        /* ── COLUMN LIST ── */
+        .col-list {
+            list-style: none; display: flex; flex-direction: column; gap: 7px;
+            max-height: 200px; overflow-y: auto; padding-right: 4px;
+        }
+        .col-list::-webkit-scrollbar { width: 4px; }
+        .col-list::-webkit-scrollbar-track { background: var(--off-white); }
+        .col-list::-webkit-scrollbar-thumb { background: var(--teal-mid); border-radius: 4px; }
+        .col-list li {
+            display: flex; align-items: center; gap: 10px; font-size: 13px;
+            padding: 8px 12px; background: var(--off-white); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text);
+        }
+        .col-list li::before {
+            content: ''; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--teal); flex-shrink: 0;
+        }
+
+        /* ── PREDICT BOX ── */
+        .predict-box {
+            background: linear-gradient(135deg, var(--navy) 0%, #0e3460 100%);
+            border-radius: 14px; padding: 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
+            position: relative; overflow: hidden;
+        }
+        .predict-box::before {
+            content: ''; position: absolute; right: -40px; top: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(15,184,201,0.18) 0%, transparent 70%);
+        }
+        .predict-box-text h3 { font: 700 16px 'Sora', sans-serif; color: var(--white); margin-bottom: 4px; }
+        .predict-box-text p { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+        .shortcuts-hint { font-size: 12px; color: var(--text-muted); text-align: center; padding: 6px 0; }
+
+        /* ── DELETE MODAL ── */
+        #deleteModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        #deleteModal > div {
+            background: var(--white); border-radius: 16px; padding: 32px; width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        #deleteModal h3 { font: 700 18px 'Sora', sans-serif; color: var(--navy); margin-bottom: 8px; }
+        #deleteModal p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; }
+        #deletePassword {
+            width: 100%; padding: 12px 16px; border: 1.5px solid var(--border);
+            border-radius: 10px; font: 14px 'DM Sans', sans-serif; outline: none;
+            margin-bottom: 16px;
+        }
+        #deleteModal button {
+            flex: 1; padding: 12px; border-radius: 10px; font: 600 14px 'DM Sans', sans-serif;
+            cursor: pointer; border: none;
+        }
+        #deleteModal [onclick="closeModal()"] { 
+            background: var(--off-white); color: var(--text-muted); 
+            border: 1.5px solid var(--border); 
+        }
+        #deleteModal [onclick="deleteAccount()"] { 
+            background: #ef4444; color: var(--white); 
+        }
+        #deleteError {
+            color: #ef4444; font-size: 13px; margin-top: 10px; display: none;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .page-layout { grid-template-columns: 1fr; }
+            .dataset-meta { grid-template-columns: 1fr 1fr; }
+            .predict-box { flex-direction: column; text-align: center; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧬</div>
+        <div class="logo-text">Genetic<span>Predict</span></div>
+    </div>
+    <span class="header-title">Genetic Disease Prediction System</span>
+    <span class="header-badge">Dashboard</span>
+</header>
+
+<div class="page-hero">
+    <h1>Welcome back 👋</h1>
+    <p>Upload your dataset and run genetic disease prediction analysis.</p>
+</div>
+
+<div class="page-layout">
+    <!-- LEFT: Personal Info -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">👤</div><h2>Personal Information</h2>
+            </div>
+            <div class="card-body">
+                <div class="avatar-circle">👤</div>
+                <div class="info-row">
+                    <div class="info-item">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value">{{fname}} {{lname}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Contact No.</span>
+                        <span class="info-value">{{cname}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email ID</span>
+                        <span class="info-value">{{ename}}</span>
+                    </div>
+                </div>
+                <form action="/update" method="GET">
+                    <button type="submit" class="btn btn-outline">✏️ Update Info</button>
+                </form>
+                <button onclick="confirmDelete()" class="delete-btn">🗑️ Delete Account</button>
+
+                <!-- DELETE MODAL -->
+                <div id="deleteModal">
+                    <div>
+                        <h3>🗑️ Delete Account</h3>
+                        <p>This action is permanent and cannot be undone. Enter your password to confirm.</p>
+                        <input type="password" id="deletePassword" placeholder="Enter your password">
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="closeModal()">Cancel</button>
+                            <button onclick="deleteAccount()">Yes, Delete</button>
+                        </div>
+                        <p id="deleteError">Incorrect password. Please try again.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="shortcuts-hint">
+                    <kbd>Ctrl+E</kbd> Update · <kbd>Ctrl+U</kbd> Upload · <kbd>Ctrl+P</kbd> Predict
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+        <!-- Dataset Meta -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📂</div><h2>Dataset Requirements</h2>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="dataset-meta">
+                    <div class="meta-chip">
+                        <span class="meta-chip-label">Dataset</span>
+                        <span class="meta-chip-value" style="font-size: 13px;">Genetic History</span>
+                    </div>
+                    <div class="meta-chip">
+                        <span class="meta-chip-label">Size</span>
+                        <span class="meta-chip-value">{{size}} KB</span>
+                    </div>
+                    <div class="meta-chip">
+                        <span class="meta-chip-label">Format</span>
+                        <span class="meta-chip-value">.xlsx</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">⬆️</div><h2>Upload Dataset</h2>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data" onsubmit="showProgress(event)">
+                    <div class="upload-zone" onclick="document.getElementById('myfile').click()">
+                        <div class="upload-zone-icon">📁</div>
+                        <p><strong>Click to browse</strong> or drag & drop your file here<br>
+                           Supports <code>.xlsx</code> files only</p>
+                        <label class="file-input-label" onclick="event.stopPropagation()">
+                            <input type="file" id="myfile" name="myfile" onchange="updateFileName(this)">
+                            Browse File
+                        </label>
+                        <span id="fileName"></span>
+                    </div>
+                    <span class="sample-link">
+                        No dataset? <a href="/dataset_info" target="_blank">Download sample dataset →</a>
+                    </span>
+                    <div id="uploadProgress">
+                        <div class="progress-label">
+                            <span>Uploading & Processing...</span>
+                            <span id="progressPct">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div id="progressBar"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">⬆️ Upload Dataset</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📊</div><h2>Dataset Properties</h2>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Rows</div>
+                        <div class="stat-value">{{rows}}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Total Columns</div>
+                        <div class="stat-value">{{columns}}</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="stat-label" style="margin-bottom: 10px;">Column Names</div>
+                    <ul class="col-list">
+                        {% for col in col %}
+                        <li>{{col}}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predict CTA -->
+        <div class="predict-box">
+            <div class="predict-box-text">
+                <h3>Ready to Predict?</h3>
+                <p>Run the ML model on your uploaded dataset to get genetic disease predictions.</p>
+            </div>
+            <form action="/ml" method="GET">
+                <button type="submit" class="predict-btn">🔬 Run Prediction</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateFileName(input) {
+    document.getElementById('fileName').textContent = 
+        input.files[0] ? '✓ ' + input.files[0].name : '';
+}
+
+function showProgress(event) {
+    const fileInput = document.getElementById('myfile');
+    if (!fileInput.files[0]) {
+        event.preventDefault();
+        alert("Please select a file first!");
+        return false;
+    }
+    document.getElementById('uploadProgress').style.display = 'block';
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 3;
+        if (progress <= 97) {
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressPct').textContent = progress + '%';
+        } else clearInterval(interval);
+    }, 300);
+}
+
+function confirmDelete() {
+    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('deletePassword').focus();
+}
+
+function closeModal() {
+    const modal = document.getElementById('deleteModal');
+    const password = document.getElementById('deletePassword');
+    const error = document.getElementById('deleteError');
+    modal.style.display = 'none';
+    password.value = ''; error.style.display = 'none';
+}
+
+function deleteAccount() {
+    const password = document.getElementById('deletePassword').value;
+    if (!password) return;
+    const userid = "{{ uname }}";
+    fetch('/deleteaccount/' + userid + '/' + password)
+        .then(r => r.text())
+        .then(msg => {
+            if (msg === "Operation successful.") {
+                alert("Your account has been deleted successfully.");
+                window.location.href = "about:blank";
+                window.close();
+            } else if (msg === "Wrong password") {
+                document.getElementById('deleteError').style.display = 'block';
+            } else {
+                alert("Something went wrong. Please try again.");
+            }
+        });
+}
+
+document.addEventListener('keydown', function(event) {
+    if ((event.ctrlKey && event.key === 'e') || event.key === 'F2') {
+        event.preventDefault();
+        window.location.href = '/update';
+    }
+    if (event.ctrlKey && event.key === 'p') {
+        event.preventDefault();
+        window.location.href = '/ml';
+    }
+    if (event.ctrlKey && event.key === 'u') {
+        event.preventDefault();
+        document.getElementById('myfile').click();
+    }
+});
+</script>
+</body>
+</html>

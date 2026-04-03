@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GeneticPredict — Prediction History</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        .container { max-width: 1000px; margin: 36px auto 60px; padding: 0 24px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        thead tr { background: var(--navy); }
+        thead th {
+            padding: 13px 16px; text-align: left; color: var(--teal);
+            font: 600 11px/1 'Sora', sans-serif; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+        tbody tr:hover { background: var(--off-white); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody td { padding: 13px 16px; color: var(--text); }
+
+        .risk-pill { display: inline-block; padding: 3px 12px; border-radius: 20px; font: 700 12px/1 sans-serif; }
+        .pill-low    { background: #dcfce7; color: #15803d; }
+        .pill-medium { background: #fef9c3; color: #a16207; }
+        .pill-high   { background: #fee2e2; color: #b91c1c; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; }
+        .empty-state div { font-size: 40px; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧬</div>
+        <div class="logo-text">Genetic<span>Predict</span></div>
+    </div>
+    <a href="javascript:window.close()" class="back-btn" aria-label="Close window">← Close</a>
+    <span class="header-badge">Prediction History</span>
+</header>
+
+<div class="page-hero">
+    <h1>📋 Prediction History</h1>
+    <p>All past genetic disease predictions for your account.</p>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">📊</div>
+            <h2>Your Predictions — {{ userid }}</h2>
+        </div>
+        <div class="table-wrap">
+            {% if records %}
+            <table role="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Date & Time</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Age</th>
+                        <th scope="col">Gender</th>
+                        <th scope="col">Family History</th>
+                        <th scope="col">Risk %</th>
+                        <th scope="col">Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.date }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.age }}</td>
+                        <td>{{ r.gender }}</td>
+                        <td>{{ r.family_history }}</td>
+                        <td><strong>{{ r.risk_percent }}%</strong></td>
+                        <td>
+                            {% if r.risk_percent <= 33 %}
+                                <span class="risk-pill pill-low" title="Low risk (≤33%)">{{ r.risk_level }}</span>
+                            {% elif r.risk_percent <= 65 %}
+                                <span class="risk-pill pill-medium" title="Medium risk (34–65%)">{{ r.risk_level }}</span>
+                            {% else %}
+                                <span class="risk-pill pill-high" title="High risk (>65%)">{{ r.risk_level }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div>🔬</div>
+                No predictions yet. Run your first prediction to see history here!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

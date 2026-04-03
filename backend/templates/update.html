@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GeneticPredict — Update Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        /* ── PAGE-SPECIFIC: update_profile.html ── */
+        .page-hero { text-align: center; padding: 40px 40px 36px; }
+
+        /* Container */
+        .container { max-width: 560px; margin: 40px auto 60px; padding: 0 24px; }
+
+        /* Card Header */
+        .card-header { padding: 20px 28px 16px; gap: 12px; }
+        .avatar-ring {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal), #06b6d4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 4px 14px rgba(15,184,201,0.30);
+            flex-shrink: 0;
+        }
+        .card-header-text h2 {
+            font-family: 'Sora', sans-serif; font-size: 16px;
+            font-weight: 700; color: var(--navy); margin: 0 0 2px;
+        }
+        .card-header-text p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+        /* Card Body */
+        .card-body {
+            padding: 28px; display: flex;
+            flex-direction: column; gap: 18px;
+        }
+
+        /* Fields */
+        .field label {
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .field label span { font-size: 15px; }
+        .field input {
+            padding: 12px 16px; font-size: 15px; border-radius: 10px;
+        }
+        .field input::placeholder { color: #aabccc; font-size: 14px; }
+
+        /* Grid & Divider */
+        .grid-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+        /* Message Box */
+        .message-box {
+            padding: 13px 16px; border-radius: 10px;
+            font-size: 14px; font-weight: 500; text-align: center;
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7;
+        }
+        .message-box.show { display: flex; }
+
+        /* Escape Hint */
+        .esc-hint {
+            text-align: center; font-size: 13px; color: var(--text-muted);
+            margin: 20px 0 0;
+        }
+        .esc-hint kbd {
+            background: var(--off-white); border: 1px solid var(--border);
+            border-radius: 4px; padding: 2px 6px; font-family: monospace;
+            font-size: 11px;
+        }
+
+        @media (max-width: 500px) {
+            .grid-two-col { grid-template-columns: 1fr; }
+            .page-hero { padding: 32px 20px 28px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧬</div>
+        <div class="logo-text">Genetic<span>Predict</span></div>
+    </div>
+    <button class="back-btn" onclick="window.history.back()">← Back</button>
+    <span class="header-badge">Update Profile</span>
+</header>
+
+<div class="page-hero">
+    <h1>✏️ Update Your Profile</h1>
+    <p>Keep your personal information up to date for accurate records.</p>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <div class="avatar-ring">👤</div>
+            <div class="card-header-text">
+                <h2>Personal Information</h2>
+                <p>Fill in the fields below and click Save Changes</p>
+            </div>
+        </div>
+
+        <form action="/update" method="POST">
+            <div class="card-body">
+
+                <div class="grid-two-col">
+                    <div class="field">
+                        <label><span>👤</span> First Name</label>
+                        <input type="text" name="First_name" placeholder="e.g. Priya">
+                    </div>
+                    <div class="field">
+                        <label><span>👤</span> Last Name</label>
+                        <input type="text" name="Last_name" placeholder="e.g. Sharma">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="field">
+                    <label><span>📞</span> Phone Number</label>
+                    <input type="text" name="Contact" placeholder="e.g. +91 98765 43210">
+                </div>
+
+                <div class="field">
+                    <label><span>✉️</span> Email ID</label>
+                    <input type="text" name="Email_Id" placeholder="e.g. priya@email.com">
+                </div>
+
+                <div class="field">
+                    <label><span>🔑</span> User ID</label>
+                    <input type="text" name="User_Id" placeholder="Your unique user ID">
+                </div>
+
+                {% if message %}
+                <div class="message-box show" style="
+                background: {{ '#dcfce7' if '✅' in message else '#fee2e2' }};
+                color: {{ '#065f46' if '✅' in message else '#b91c1c' }};
+                border: 1px solid {{ '#6ee7b7' if '✅' in message else '#fca5a5' }};">
+                {{ message }}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="submit-btn">💾 &nbsp;Save Changes</button>
+
+            </div>
+        </form>
+    </div>
+
+    <p class="esc-hint">Press <kbd>Esc</kbd> to go back</p>
+</div>
+
+<script>
+document.addEventListener('keydown', e => { if (e.key === 'Escape') window.history.back(); });
+</script>
+
+</body>
+</html>

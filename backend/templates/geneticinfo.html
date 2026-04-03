@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GeneticPredict — Genetic Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        /* ── PAGE-SPECIFIC: geneticinfo.html ── */
+
+        /* Hero override: centred text + larger padding on this page */
+        .page-hero { text-align: center; padding: 44px 40px 40px; }
+        .page-hero p { max-width: 540px; margin: 0 auto; font-size: 15px; }
+
+        /* CONTAINER */
+        .container {
+            max-width: 860px;
+            margin: 40px auto 60px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Card overrides: slightly larger padding on this info-heavy page */
+        .card-header { padding: 20px 28px 16px; gap: 12px; }
+        .card-icon   { width: 38px; height: 38px; border-radius: 10px; font-size: 17px; }
+        .card-header h2 { font-size: 16px; font-weight: 700; }
+        .card-body   { padding: 26px 28px; }
+
+        /* RISK FACTORS */
+        .risk-factors { display: flex; flex-direction: column; gap: 14px; }
+        .factor-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 16px 18px;
+            background: var(--off-white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .factor-icon {
+            width: 38px; height: 38px;
+            border-radius: 9px;
+            background: var(--teal-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .factor-content h4 {
+            font-family: 'Sora', sans-serif;
+            font-size: 14px; font-weight: 700;
+            color: var(--navy); margin-bottom: 4px;
+        }
+        .factor-content p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+
+        /* SCALE TABLE */
+        .scale-table {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .scale-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 180px;
+            align-items: center;
+            padding: 13px 18px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        .scale-row:last-child { border-bottom: none; }
+        .scale-row:hover { background: var(--off-white); }
+        .scale-num {
+            font-family: 'Sora', sans-serif;
+            font-size: 20px; font-weight: 700;
+            color: var(--navy);
+        }
+        .scale-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Severity bar */
+        .severity-bar-track {
+            height: 7px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .severity-bar-fill { height: 100%; border-radius: 10px; transition: width 0.4s; }
+
+        /* SNP colours */
+        .snp-1  .severity-bar-fill { width: 10%;  background: #22c55e; }
+        .snp-2  .severity-bar-fill { width: 20%;  background: #22c55e; }
+        .snp-3  .severity-bar-fill { width: 30%;  background: #84cc16; }
+        .snp-4  .severity-bar-fill { width: 40%;  background: #a3e635; }
+        .snp-5  .severity-bar-fill { width: 50%;  background: #fbbf24; }
+        .snp-6  .severity-bar-fill { width: 60%;  background: #f97316; }
+        .snp-7  .severity-bar-fill { width: 70%;  background: #f97316; }
+        .snp-8  .severity-bar-fill { width: 80%;  background: #ef4444; }
+        .snp-9  .severity-bar-fill { width: 90%;  background: #ef4444; }
+        .snp-10 .severity-bar-fill { width: 100%; background: #9b1c1c; }
+
+        /* Gene colours */
+        .gene-1 .severity-bar-fill { width: 10%;  background: #6366f1; }
+        .gene-2 .severity-bar-fill { width: 30%;  background: #818cf8; }
+        .gene-3 .severity-bar-fill { width: 55%;  background: var(--teal); }
+        .gene-4 .severity-bar-fill { width: 75%;  background: #fbbf24; }
+        .gene-5 .severity-bar-fill { width: 100%; background: #ef4444; }
+
+        /* Scale header row */
+        .scale-header {
+            display: grid;
+            grid-template-columns: 60px 1fr 180px;
+            padding: 10px 18px;
+            background: var(--navy);
+        }
+        .scale-header span {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.7px;
+            color: rgba(255,255,255,0.50);
+        }
+
+        /* NCBI BLOCK */
+        .ncbi-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .ncbi-text h3 {
+            font-family: 'Sora', sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: var(--navy); margin-bottom: 6px;
+        }
+        .ncbi-text p {
+            font-size: 13.5px; color: var(--text-muted);
+            line-height: 1.6; max-width: 480px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧬</div>
+        <div class="logo-text">Genetic<span>Predict</span></div>
+    </div>
+    <button class="back-btn" onclick="window.history.back()">← Back</button>
+    <span class="header-badge">Genetic Info</span>
+</header>
+
+<!-- HERO -->
+<div class="page-hero">
+    <h1>🔬 Understanding Genetic Risk</h1>
+    <p>Learn what SNP values, gene expression levels, and other markers mean for your genetic health assessment.</p>
+</div>
+
+<div class="container">
+
+    <!-- Risk Factors -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">⚠️</div>
+            <h2>Factors Affecting Genetic Risk</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:18px; line-height:1.7;">
+                Genetic diseases stem from pathogenic mutations in DNA that can impair essential biological functions. Unlike a temporary infection, these risks are often systemic and lifelong, potentially leading to chronic disability. Several key factors influence your overall risk level.
+            </p>
+            <div class="risk-factors">
+                <div class="factor-item">
+                    <div class="factor-icon">🎂</div>
+                    <div class="factor-content">
+                        <h4>Age</h4>
+                        <p>Many genetic conditions have variable expressivity — symptoms may only appear later in life as cellular damage accumulates, or during specific developmental stages.</p>
+                    </div>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon">⚧️</div>
+                    <div class="factor-content">
+                        <h4>Gender</h4>
+                        <p>Certain risks are sex-linked (carried on X or Y chromosomes) or hormonally influenced, making some conditions more prevalent or severe in one gender.</p>
+                    </div>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon">👨‍👩‍👧</div>
+                    <div class="factor-content">
+                        <h4>Family History</h4>
+                        <p>This reflects your hereditary load. A strong family history increases the probability that you carry specific risk alleles passed down through generations.</p>
+                    </div>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon">🧬</div>
+                    <div class="factor-content">
+                        <h4>SNP Values</h4>
+                        <p>Single Nucleotide Polymorphisms (SNPs) are individual "letter" variations in your DNA code. These values represent risk stratification — ranging from benign variants to critical pathogenic mutations.</p>
+                    </div>
+                </div>
+                <div class="factor-item">
+                    <div class="factor-icon">📈</div>
+                    <div class="factor-content">
+                        <h4>Gene Expression Values</h4>
+                        <p>While SNPs are your "instruction manual," gene expression measures how much of that instruction is actually being followed by the cell — known as transcriptional activity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SNP Scale -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">🧬</div>
+            <h2>SNP Value Meanings (0 – 2 in dataset · 1–10 clinical scale)</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:18px; line-height:1.7;">
+                Each SNP marker is scored on a scale. A higher score indicates a stronger association with disease risk. The bar beside each level shows relative severity.
+            </p>
+            <div class="scale-table">
+                <div class="scale-header">
+                    <span>Level</span>
+                    <span>Clinical Meaning</span>
+                    <span>Severity</span>
+                </div>
+                <div class="scale-row snp-1">
+                    <div class="scale-num">1</div>
+                    <div class="scale-desc">Very common variant with negligible clinical impact.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-2">
+                    <div class="scale-num">2</div>
+                    <div class="scale-desc">Common polymorphism typically considered benign.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-3">
+                    <div class="scale-num">3</div>
+                    <div class="scale-desc">Low-impact variation occasionally associated with mild biological effects.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-4">
+                    <div class="scale-num">4</div>
+                    <div class="scale-desc">Variant of uncertain significance requiring additional evidence.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-5">
+                    <div class="scale-num">5</div>
+                    <div class="scale-desc">Moderate association with disease susceptibility.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-6">
+                    <div class="scale-num">6</div>
+                    <div class="scale-desc">Genetic variation linked to increased predisposition.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-7">
+                    <div class="scale-num">7</div>
+                    <div class="scale-desc">Strong risk marker with high probability of influencing phenotype.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-8">
+                    <div class="scale-num">8</div>
+                    <div class="scale-desc">High penetrance mutation often seen in hereditary disease cases.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-9">
+                    <div class="scale-num">9</div>
+                    <div class="scale-desc">Severe pathogenic mutation with strong disease correlation.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row snp-10">
+                    <div class="scale-num">10</div>
+                    <div class="scale-desc">Critical mutation directly associated with major genetic disorders.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gene Expression Scale -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">📈</div>
+            <h2>Gene Expression Levels (1 – 5)</h2>
+        </div>
+        <div class="card-body">
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:18px; line-height:1.7;">
+                Gene expression measures how actively a gene is being transcribed into protein. Level 3 is normal; deviations in either direction can signal disease-related processes.
+            </p>
+            <div class="scale-table">
+                <div class="scale-header">
+                    <span>Level</span>
+                    <span>Clinical Meaning</span>
+                    <span>Activity</span>
+                </div>
+                <div class="scale-row gene-1">
+                    <div class="scale-num">1</div>
+                    <div class="scale-desc">Gene is silenced or significantly downregulated.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row gene-2">
+                    <div class="scale-num">2</div>
+                    <div class="scale-desc">Low expression producing limited protein activity.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row gene-3">
+                    <div class="scale-num">3</div>
+                    <div class="scale-desc">Normal physiological expression level.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row gene-4">
+                    <div class="scale-num">4</div>
+                    <div class="scale-desc">Upregulated expression indicating heightened cellular activity.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+                <div class="scale-row gene-5">
+                    <div class="scale-num">5</div>
+                    <div class="scale-desc">Extreme overexpression potentially associated with disease processes.</div>
+                    <div class="severity-bar-track"><div class="severity-bar-fill"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NCBI -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">🌐</div>
+            <h2>Obtaining Your Genetic Data</h2>
+        </div>
+        <div class="card-body">
+            <div class="ncbi-inner">
+                <div class="ncbi-text">
+                    <h3>National Center for Biotechnology Information (NCBI)</h3>
+                    <p>Users can obtain genetic sequence information and SNP datasets from publicly available biomedical databases. NCBI hosts genomic datasets used by researchers worldwide and is one of the largest such resources available.</p>
+                </div>
+                <a href="https://www.ncbi.nlm.nih.gov/" target="_blank" class="ncbi-btn">
+                    🔗 &nbsp;Visit NCBI Database
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <p class="esc-hint">Press <kbd>Esc</kbd> to go back</p>
+
+</div>
+
+<script>
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') window.history.back();
+});
+</script>
+
+</body>
+</html>

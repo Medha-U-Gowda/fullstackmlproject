@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dataset Information</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        /* ── PAGE-SPECIFIC: dataset_info.html ── */
+        header { height: 72px; padding: 0 40px; }
+        .logo-icon { width: 38px; height: 38px; border-radius: 10px; font-size: 20px; }
+        .logo-text { font-size: 18px; letter-spacing: -0.3px; }
+
+        /* Hero */
+        .page-hero { padding: 48px 40px 44px; text-align: center; }
+        .page-hero h1 { font-size: 30px; }
+        .page-hero p { color: rgba(255,255,255,0.65); font-size: 15px; max-width: 520px; margin: 0 auto; }
+
+        /* Container */
+        .container {
+            max-width: 860px; margin: 40px auto 60px; padding: 0 24px;
+            display: flex; flex-direction: column; gap: 28px;
+        }
+
+        /* Card overrides */
+        .card-header { padding: 22px 28px 18px; gap: 12px; }
+        .card-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 18px; }
+        .card-icon.amber { background: #fff8e1; }
+        .card-icon.red { background: #fff0f0; }
+        .card-header h2 { font-size: 17px; }
+        .card-body { padding: 24px 28px; }
+
+        /* Download Box */
+        .download-box {
+            background: linear-gradient(135deg, var(--navy) 0%, #0e3460 100%);
+            border-radius: 12px; padding: 32px 28px; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .download-box::before {
+            content: ''; position: absolute; top: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(15,184,201,0.20) 0%, transparent 70%);
+        }
+        .download-box p { color: rgba(255,255,255,0.72); font-size: 14px; margin-bottom: 20px; }
+        .download-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 32px; background: linear-gradient(135deg, var(--teal), #06b6d4);
+            color: var(--white); text-decoration: none; border-radius: 10px;
+            font-weight: 600; font-size: 15px; transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 18px rgba(15,184,201,0.35);
+        }
+        .download-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,184,201,0.45); }
+
+        /* Columns Grid */
+        .columns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .col-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 14px 16px; background: var(--off-white);
+            border-radius: 10px; border: 1px solid var(--border);
+        }
+        .col-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); margin-top: 6px; flex-shrink: 0; }
+        .col-dot.green { background: #10b981; }
+        .col-item-content { display: flex; flex-direction: column; gap: 2px; }
+        .col-name {
+            font-family: 'DM Mono', 'Courier New', monospace;
+            font-size: 13px; font-weight: 600; color: var(--navy);
+            background: var(--teal-mid); padding: 1px 8px;
+            border-radius: 4px; display: inline-block;
+        }
+        .col-name.green { background: #d1fae5; color: #065f46; }
+        .col-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Alert Boxes */
+        .alert {
+            border-radius: 10px; padding: 16px 18px;
+            display: flex; gap: 14px; align-items: flex-start;
+        }
+        .alert.amber { background: #fffbeb; border: 1px solid #fde68a; }
+        .alert.red { background: #fff5f5; border: 1px solid #fed7d7; }
+        .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+        .alert-content h4 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--navy); }
+        .alert-content ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+        .alert-content li { font-size: 13.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+        .alert-content li::before { content: '•'; color: var(--teal); font-weight: 700; }
+
+        /* Code & Table */
+        code {
+            font-family: 'DM Mono', 'Courier New', monospace;
+            font-size: 12.5px; background: var(--teal-mid);
+            color: var(--navy); padding: 1px 6px; border-radius: 4px;
+        }
+        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        tbody tr { border-bottom: 1px solid var(--border); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:nth-child(even) { background: var(--off-white); }
+        tbody td { padding: 12px 16px; color: var(--text); }
+        .td-ellipsis { color: var(--text-muted); }
+
+        /* Footer */
+        .close-link { text-align: center; padding-top: 8px; }
+        .close-link a {
+            color: var(--text-muted); text-decoration: none;
+            font-size: 14px; display: inline-flex;
+            align-items: center; gap: 6px; transition: color 0.15s;
+        }
+        .close-link a:hover { color: var(--teal); }
+
+        /* Utility */
+        .card-body-stack { display: flex; flex-direction: column; gap: 16px; }
+        .text-muted { color: var(--text-muted); font-size: 14px; }
+
+        @media (max-width: 600px) {
+            .columns-grid { grid-template-columns: 1fr; }
+            .page-hero { padding: 36px 20px 32px; }
+            .card-body, .card-header { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🧬</div>
+            <div class="logo-text">Genetic<span>Predict</span></div>
+        </div>
+        <span class="header-badge">Dataset Guide</span>
+    </header>
+
+    <div class="page-hero">
+        <h1>Dataset Information &amp; Download</h1>
+        <p>Everything you need to prepare your data for the genetic disease prediction system.</p>
+    </div>
+
+    <div class="container">
+
+        <!-- CARD 1: Download -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon teal">📊</div>
+                <h2>Don't Have a Dataset?</h2>
+            </div>
+            <div class="card-body">
+                <div class="download-box">
+                    <p>Download our pre-formatted sample genetic dataset — ready to use with the prediction system immediately.</p>
+                    <a href="/download_sample_dataset" class="download-btn">⬇&nbsp; Download Sample Dataset</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 2: Required Columns -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon teal">📋</div>
+                <h2>Required Columns</h2>
+            </div>
+            <div class="card-body card-body-stack">
+                <p class="text-muted">Your dataset must include all of the following columns, with exact names as shown.</p>
+                <div class="columns-grid">
+                    <div class="col-item">
+                        <div class="col-dot"></div>
+                        <div class="col-item-content">
+                            <span class="col-name">age</span>
+                            <span class="col-desc">Patient age (numeric)</span>
+                        </div>
+                    </div>
+                    <div class="col-item">
+                        <div class="col-dot"></div>
+                        <div class="col-item-content">
+                            <span class="col-name">sex</span>
+                            <span class="col-desc">Gender — Male / Female</span>
+                        </div>
+                    </div>
+                    <div class="col-item">
+                        <div class="col-dot"></div>
+                        <div class="col-item-content">
+                            <span class="col-name">family_history</span>
+                            <span class="col-desc">Family history of genetic disease (1 = Yes, 0 = No)</span>
+                        </div>
+                    </div>
+                    <div class="col-item">
+                        <div class="col-dot"></div>
+                        <div class="col-item-content">
+                            <span class="col-name">snp_1 … snp_10</span>
+                            <span class="col-desc">SNP genetic markers (values: 0, 1, or 2)</span>
+                        </div>
+                    </div>
+                    <div class="col-item">
+                        <div class="col-dot"></div>
+                        <div class="col-item-content">
+                            <span class="col-name">gene_expr_1 … gene_expr_5</span>
+                            <span class="col-desc">Gene expression values (decimal numbers)</span>
+                        </div>
+                    </div>
+                    <div class="col-item">
+                        <div class="col-dot green"></div>
+                        <div class="col-item-content">
+                            <span class="col-name green">disease</span>
+                            <span class="col-desc">Output column — 1 = Has disease, 0 = No disease</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert amber">
+                    <span class="alert-icon">💡</span>
+                    <div class="alert-content">
+                        <h4>Formatting Rules</h4>
+                        <ul>
+                            <li>Use <strong>lowercase</strong> for all column names</li>
+                            <li>Use <strong>underscores</strong> (_), not spaces</li>
+                            <li>Output column (<code>disease</code>) must be the <strong>last column</strong></li>
+                            <li>File format must be <code>.xlsx</code> (Excel)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert red">
+                    <span class="alert-icon">⚠️</span>
+                    <div class="alert-content">
+                        <h4>Column names must match EXACTLY</h4>
+                        <ul>
+                            <li>Any mismatch may prevent the system from processing your dataset correctly.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 3: Example Table -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon teal">📝</div>
+                <h2>Dataset Format Example</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>age</td>
+                                <td>sex</td>
+                                <td>family_history</td>
+                                <td>snp_1</td>
+                                <td class="td-ellipsis">…</td>
+                                <td>gene_expr_5</td>
+                                <td>disease</td>
+                            </tr>
+                            <tr>
+                                <td>52</td>
+                                <td>Male</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td class="td-ellipsis">…</td>
+                                <td>2.915</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>15</td>
+                                <td>Female</td>
+                                <td>1</td>
+                                <td>2</td>
+                                <td class="td-ellipsis">…</td>
+                                <td>6.234</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>67</td>
+                                <td>Male</td>
+                                <td>1</td>
+                                <td>1</td>
+                                <td class="td-ellipsis">…</td>
+                                <td>4.110</td>
+                                <td>1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="close-link">
+            <a href="javascript:window.close()">← Close this window</a>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GeneticPredict — Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+    <style>
+        /* PAGE LAYOUT */
+        .page-layout {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 24px;
+            max-width: 1140px;
+            margin: 32px auto 60px;
+            padding: 0 24px;
+            align-items: start;
+        }
+
+        /* FORM FIELDS GRID */
+        .fields-grid { display: grid; gap: 14px; margin-bottom: 24px; }
+        .fields-grid.two-col { grid-template-columns: 1fr 1fr; }
+        .fields-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+
+        /* CHIP GROUP */
+        .chip-group { display: flex; gap: 8px; }
+        .chip-group input[type="radio"] { display: none; }
+        .chip-group label {
+            flex: 1; text-align: center; padding: 9px 0; border-radius: 8px;
+            border: 1.5px solid var(--border); font-size: 14px; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; background: var(--off-white);
+            transition: all 0.15s;
+        }
+        .chip-group input[type="radio"]:checked + label {
+            background: var(--navy); border-color: var(--navy); color: var(--white);
+        }
+        .chip-group label:hover { border-color: var(--teal); color: var(--teal); }
+
+        /* RIGHT COLUMN */
+        .right-col {
+            display: flex; flex-direction: column; gap: 20px;
+            position: sticky; top: 90px;
+        }
+
+        /* GAUGE */
+        .gauge-wrapper { display: flex; flex-direction: column; align-items: center; padding: 28px 20px 20px; }
+        .gauge-svg-wrap { position: relative; width: 280px; height: 150px; margin-bottom: 4px; }
+        .gauge-svg-wrap svg { width: 100%; height: 100%; }
+        .gauge-needle-wrap {
+            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0;
+        }
+        .gauge-needle {
+            position: absolute; width: 3px; height: 110px;
+            background: linear-gradient(to top, var(--navy), rgba(11,31,58,0.25));
+            border-radius: 3px 3px 0 0; bottom: 0; left: -1.5px;
+            transform-origin: bottom center; transform: rotate(-90deg);
+            transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 10;
+        }
+        .gauge-center-dot {
+            position: absolute; width: 16px; height: 16px; background: var(--navy);
+            border-radius: 50%; bottom: -8px; left: -8px; z-index: 11;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.30);
+        }
+        .gauge-labels {
+            display: flex; justify-content: space-between; width: 280px; margin-top: 6px;
+        }
+        .gauge-labels span { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+        .label-low  { color: var(--green); }
+        .label-mid  { color: var(--amber); }
+        .label-high { color: var(--red); }
+
+        /* RISK NUMBER & PILL */
+        .risk-number {
+            font-family: 'Sora', sans-serif; font-size: 52px; font-weight: 700;
+            color: var(--navy); text-align: center; margin: 18px 0 6px;
+            transition: color 0.5s;
+        }
+        .risk-number span { font-size: 24px; color: var(--text-muted); }
+        .risk-pill {
+            display: inline-block; padding: 8px 28px; border-radius: 30px;
+            font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+            letter-spacing: 0.5px; text-align: center; transition: all 0.4s;
+        }
+        .pill-waiting { background: var(--off-white); color: var(--text-muted); border: 1.5px dashed var(--border); }
+        .pill-low    { background: #dcfce7; color: #15803d; }
+        .pill-medium { background: #fef9c3; color: #a16207; }
+        .pill-high   { background: #fee2e2; color: #b91c1c; }
+
+        /* LEGEND */
+        .legend { display: flex; flex-direction: column; gap: 10px; }
+        .legend-item {
+            display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+            border-radius: 10px; background: var(--off-white); border: 1px solid var(--border);
+        }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .legend-item .leg-title { font-size: 13px; font-weight: 600; color: var(--text); }
+        .legend-item .leg-desc  { font-size: 12px; color: var(--text-muted); }
+
+        /* ACTION LINKS */
+        .action-links { display: flex; flex-direction: column; gap: 10px; }
+        .dl-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+            padding: 13px 20px; background: var(--navy); color: var(--white);
+            border-radius: 10px; font-size: 14px; font-weight: 600; border: none;
+            cursor: pointer; text-decoration: none; font-family: 'DM Sans', sans-serif;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .dl-btn:hover { background: var(--navy-light); transform: translateY(-1px); }
+        .info-link { text-align: center; font-size: 13px; color: var(--text-muted); }
+        .info-link a { color: var(--teal); font-weight: 600; text-decoration: none; }
+        .info-link a:hover { text-decoration: underline; }
+
+        /* UTILS */
+        .sample-banner {
+            background: linear-gradient(135deg, #122947, #0e3460);
+            border: 1px solid #1e4976; border-radius: 12px;
+            padding: 14px 20px; display: flex; align-items: center;
+            justify-content: space-between; gap: 16px; margin-bottom: 20px;
+        }
+        .sample-banner h3 {
+            font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700;
+            color: white; margin: 0 0 3px;
+        }
+        .sample-banner p {
+            font-size: 12px; color: rgba(255,255,255,0.55); margin: 0;
+        }
+        .sample-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 10px 20px; background: linear-gradient(135deg, #0fb8c9, #06b6d4);
+            color: white; border: none; border-radius: 8px;
+            font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700;
+            cursor: pointer; white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(15,184,201,0.30);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .sample-btn:hover { transform: translateY(-2px); }
+
+        /* HISTORY BUTTON */
+        .history-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-top: 12px; padding: 12px; background: var(--navy); color: white;
+            border-radius: 11px; font-family: 'Sora', sans-serif; font-size: 14px;
+            font-weight: 600; text-decoration: none; transition: background 0.15s;
+        }
+        .history-btn:hover { background: #122947; }
+
+        @media (max-width: 900px) {
+            .page-layout { grid-template-columns: 1fr; }
+            .right-col { position: static; }
+            .fields-grid.three-col { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 560px) {
+            .fields-grid, .fields-grid.three-col { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧬</div>
+        <div class="logo-text">Genetic<span>Predict</span></div>
+    </div>
+    <button class="back-btn" onclick="window.history.back()">← Back</button>
+    <span class="header-badge">ML Prediction</span>
+</header>
+
+<div class="page-hero">
+    <h1>🔬 Genetic Disease Prediction</h1>
+    <p>Enter patient details and genetic markers below to run the prediction model.</p>
+</div>
+
+<div class="page-layout">
+    <!-- LEFT: FORM -->
+    <div>
+        <div class="sample-banner">
+            <div>
+                <h3>🧪 First time here?</h3>
+                <p>Fill all fields instantly with a sample patient profile to see how the prediction works.</p>
+            </div>
+            <button type="button" class="sample-btn" onclick="fillSampleData()">✦ Fill Sample Data</button>
+        </div>
+
+        <form id="predictionForm" onsubmit="submitForm(event)">
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <div class="card-icon">👤</div>
+                <h2>Personal & Clinical Information</h2>
+            </div>
+            <div class="card-body">
+                <div class="section-label">Basic Details</div>
+                <div class="fields-grid two-col">
+                    <div class="field">
+                        <label for="age">Age (years)</label>
+                        <input type="number" id="age" name="age" placeholder="e.g. 45" required min="1" max="120">
+                    </div>
+                    <div class="field">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">Select gender</option>
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                        </select>
+                    </div>
+                    <div class="field" style="grid-column: span 2;">
+                        <label for="family_history">Family history of genetic disease?</label>
+                        <select id="family_history" name="family_history" required>
+                            <option value="">Select an option</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <div class="card-icon">🧬</div>
+                <h2>SNP Genetic Markers</h2>
+            </div>
+            <div class="card-body">
+                <div class="section-label">SNP Values — select 0, 1, or 2 for each</div>
+                <div class="fields-grid three-col" id="snpContainer">
+                    <!-- SNPs generated by JS below -->
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <div class="card-icon">📈</div>
+                <h2>Gene Expression Values</h2>
+            </div>
+            <div class="card-body">
+                <div class="section-label">Enter decimal values for each expression</div>
+                <div class="fields-grid two-col">
+                    <div class="field"><label for="gene1">Gene Expression 1</label><input type="number" id="gene1" name="gene1" placeholder="e.g. 3.45" required step="0.01"></div>
+                    <div class="field"><label for="gene2">Gene Expression 2</label><input type="number" id="gene2" name="gene2" placeholder="e.g. 5.12" required step="0.01"></div>
+                    <div class="field"><label for="gene3">Gene Expression 3</label><input type="number" id="gene3" name="gene3" placeholder="e.g. 2.80" required step="0.01"></div>
+                    <div class="field"><label for="gene4">Gene Expression 4</label><input type="number" id="gene4" name="gene4" placeholder="e.g. 6.10" required step="0.01"></div>
+                    <div class="field" style="grid-column: span 2;"><label for="gene5">Gene Expression 5</label><input type="number" id="gene5" name="gene5" placeholder="e.g. 4.67" required step="0.01"></div>
+                </div>
+                <button type="submit" class="submit-btn">🔬 &nbsp;Run Prediction Analysis</button>
+                
+                <!-- Name field for history -->
+                <div class="field" style="margin-top: 14px;">
+                    <label for="predname">Your Name <span style="color:var(--text-muted); font-weight:400;">(saved with prediction)</span></label>
+                    <input type="text" id="predname" name="predname" placeholder="e.g. Priya Sharma">
+                </div>
+
+                <!-- View History button -->
+                <a href="/history/{{ userid }}" target="_blank" class="history-btn">
+                    📋 View Prediction History
+                </a>
+            </div>
+        </div>
+        </form>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="right-col">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <h2>Risk Analysis Result</h2>
+            </div>
+            <div class="gauge-wrapper">
+                <div class="gauge-svg-wrap">
+                    <svg viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
+                        <defs><clipPath id="topHalf"><rect x="0" y="0" width="280" height="150"/></clipPath></defs>
+                        <path d="M 140 148 L 14 148 A 126 126 0 0 1 77 21 Z" fill="#22c55e" opacity="0.92"/>
+                        <path d="M 140 148 L 77 21 A 126 126 0 0 1 203 21 Z" fill="#fbbf24" opacity="0.92"/>
+                        <path d="M 140 148 L 203 21 A 126 126 0 0 1 266 148 Z" fill="#ef4444" opacity="0.92"/>
+                        <circle cx="140" cy="148" r="80" fill="white"/>
+                        <rect x="0" y="148" width="280" height="10" fill="white"/>
+                        <path d="M 14 148 A 126 126 0 0 1 266 148" fill="none" stroke="#0fb8c9" stroke-width="2" opacity="0.4"/>
+                    </svg>
+                    <div class="gauge-needle-wrap">
+                        <div class="gauge-needle" id="needle"></div>
+                        <div class="gauge-center-dot"></div>
+                    </div>
+                </div>
+                <div class="gauge-labels">
+                    <span class="label-low">LOW</span>
+                    <span class="label-mid">MEDIUM</span>
+                    <span class="label-high">HIGH</span>
+                </div>
+                <div class="risk-number" id="riskPercent">--<span>%</span></div>
+                <div class="risk-pill pill-waiting" id="riskStatus">Awaiting Analysis...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                <h2>Risk Categories</h2>
+            </div>
+            <div class="card-body">
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div><div><div class="leg-title">Low Risk (0 – 33%)</div><div class="leg-desc">Minimal genetic markers detected</div></div></div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;"></div><div><div class="leg-title">Medium Risk (34 – 65%)</div><div class="leg-desc">Moderate genetic markers present</div></div></div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div><div><div class="leg-title">High Risk (66 – 100%)</div><div class="leg-desc">Significant genetic markers detected</div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="action-links">
+                    <button class="dl-btn" onclick="downloadReport()">⬇️ &nbsp;Download Risk Report (PDF)</button>
+                    <div class="info-link">Don't know your SNP or Gene Expression values?<br><a href="/geneticinfo" target="_blank">Learn what these values mean ➡</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Generate 10 SNP chip groups dynamically
+const snpContainer = document.getElementById('snpContainer');
+for (let i = 1; i <= 10; i++) {
+    const field = document.createElement('div');
+    field.className = 'field';
+    field.innerHTML = `
+        <label>SNP ${i}</label>
+        <div class="chip-group">
+            <input type="radio" name="snp${i}" id="snp${i}_0" value="0" ${i===1?'required':''}>
+            <label for="snp${i}_0">0</label>
+            <input type="radio" name="snp${i}" id="snp${i}_1" value="1">
+            <label for="snp${i}_1">1</label>
+            <input type="radio" name="snp${i}" id="snp${i}_2" value="2">
+            <label for="snp${i}_2">2</label>
+        </div>`;
+    snpContainer.appendChild(field);
+}
+
+function downloadReport() {
+    const txt = document.getElementById('riskPercent').textContent.replace('%', '').trim();
+    if (txt === '--') { alert('Please run a prediction first.'); return; }
+    window.location.href = '/download_report/' + txt;
+}
+
+function submitForm(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('predictionForm'));
+    fetch('/applyml', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            updateGauge(data.risk_percentage);
+            document.getElementById('riskPercent').dataset.val = data.risk_percentage;
+        })
+        .catch(err => console.error('Error:', err));
+}
+
+function updateGauge(pct) {
+    document.getElementById('riskPercent').innerHTML = pct + '<span>%</span>';
+    const rotation = -90 + (pct * 1.8);
+    document.getElementById('needle').style.transform = `rotate(${rotation}deg)`;
+    
+    const pill = document.getElementById('riskStatus');
+    if (pct <= 33) {
+        pill.textContent = '✅ LOW RISK';
+        pill.className = 'risk-pill pill-low';
+    } else if (pct <= 65) {
+        pill.textContent = '⚠️ MEDIUM RISK';
+        pill.className = 'risk-pill pill-medium';
+    } else {
+        pill.textContent = '🔴 HIGH RISK';
+        pill.className = 'risk-pill pill-high';
+    }
+    
+    // Save to history after every prediction
+    savePredictionHistory(pct);
+    
+    document.querySelector('.right-col').scrollIntoView({ behavior: 'smooth' });
+}
+
+function savePredictionHistory(pct) {
+    const name = document.getElementById('predname').value || 'Unknown';
+    const formData = new FormData(document.getElementById('predictionForm'));
+    const userid = "{{ userid }}";
+    
+    fetch(`/savehistory/${userid}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name,
+            age: formData.get('age'),
+            gender: formData.get('gender'),
+            family_history: formData.get('family_history'),
+            risk_percent: pct,
+            risk_level: pct <= 33 ? 'Low Risk' : pct <= 65 ? 'Medium Risk' : 'High Risk'
+        })
+    }).catch(err => console.error('Save error:', err));
+}
+
+function fillSampleData() {
+    document.getElementById('age').value = 45;
+    document.getElementById('gender').value = 'Female';
+    document.getElementById('family_history').value = 'Yes';
+    const snpSample = { snp1:1, snp2:0, snp3:2, snp4:1, snp5:0, snp6:2, snp7:1, snp8:0, snp9:1, snp10:2 };
+    for (const [name, val] of Object.entries(snpSample)) {
+        const radio = document.querySelector(`input[name="${name}"][value="${val}"]`);
+        if (radio) radio.checked = true;
+    }
+    ['gene1','gene2','gene3','gene4','gene5'].forEach((g,i) => 
+        document.getElementById(g).value = [3.45,5.12,2.80,6.10,4.67][i]);
+    
+    const btn = document.querySelector('.sample-btn');
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓ Sample Data Filled!';
+    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+    setTimeout(() => {
+        btn.innerHTML = original;
+        btn.style.background = 'linear-gradient(135deg, #0fb8c9, #06b6d4)';
+    }, 2000);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') window.history.back(); });
+</script>
+
+</body>
+</html>
