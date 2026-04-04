@@ -799,5 +799,5 @@ def history(userid):
         print("History error:", e)
         return render_template('history.html', records=[], userid=userid)
 if __name__ == '__main__': 
-    backend_application.run(host="0.0.0.0")
+    backend_application.run(host="0.0.0.0",port=8080)
     
