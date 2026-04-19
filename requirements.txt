@@ -1,2 +1,2 @@
 To run the project, you need internet connection .
-First the backend should be initialized in cmd and then the frontend should in initialized in cmd
+First the backend should be initialized in cmd and then the frontend should be initialized in cmd
